@@ -1,7 +1,6 @@
-﻿using Application.Abstractions;
-using Domain.Models;
+﻿using Domain.Entities;
 
-namespace Application.Repositories;
+namespace Domain.Repositories;
 
 public interface IStudentRepository : IRepository<Student>
 {
