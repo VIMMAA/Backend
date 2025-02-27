@@ -1,6 +1,6 @@
 ﻿using Domain.Abstractions;
 
-namespace Application.Abstractions;
+namespace Domain.Repositories;
 
 public interface IRepository<T> where T : Entity
 {
