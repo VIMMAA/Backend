@@ -112,5 +112,99 @@ public class UserController : ControllerBase
             return StatusCode(500, new  { Status = "error", Message = e.Message }); 
         }
     }   
+
+       [ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+  [HttpPost("login")]
+    [AllowAnonymous]
+
+    public async Task<IActionResult> LoginDoctor([FromBody] LoginModel doctorLogin)
+    {
+        if (!ModelState.IsValid) 
+        {
+            return BadRequest(new { status = "error", message = "Invalid arguments" });
+        }
+
+
+        var user = await _context.Users.FirstOrDefaultAsync(d => d.Email == doctorLogin.Email);
+        
+
+        if (user == null  )
+        {
+            return Unauthorized(new { status = "error", message = "Invalid email or password" });
+        }
+
+        var jwtKey = "G7@!f4#Zq8&lN9^kP2*eR1$hW3%tX6@zB5"; 
+
+        if (string.IsNullOrEmpty(jwtKey))
+        {
+            return StatusCode(500, new { status = "error", message = "JWT key not found" });
+        }
+
+
+        var key = Encoding.ASCII.GetBytes(jwtKey);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var accessTokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new Claim[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Email),
+
+            }),
+            Expires = DateTime.UtcNow.AddMinutes(30), 
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var Token = tokenHandler.CreateToken(accessTokenDescriptor);
+        var TokenString = tokenHandler.WriteToken(Token);
+    try 
+    {
+        return Ok(new
+        {
+            status = "success",
+            message = "User logged in successfully",
+            role = user.Role,
+            Token = TokenString,
+        });
+    }
+    catch(Exception e)
+     {
+        Console.Error.WriteLine($"Error loggin doctor: {e}");
+
+        return StatusCode(500); 
+    }
+    }
+
+     [ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [HttpPost("logout")]
+    [Authorize]
+    public IActionResult LogoutDoctor()
+    {
+    
+    var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+    
+    if (string.IsNullOrEmpty(token))
+    {
+        return BadRequest(new { message = "Token is required" });
+    }
+
+    if (!_tokenRevocationService.RevokeToken(token))
+    {
+        return BadRequest(new { message = "Token has already been revoked" });
+    }
+
+    return Ok(new { message = "Logout successful" });
+
+    }
+
+
 }
+
+
 }
