@@ -7,7 +7,15 @@ public class UserRegisterModel
 {
     [Required]
     [StringLength(1000, MinimumLength = 1)]
-    public required string Name { get; set; }
+    public required string FirstName { get; set; }
+    
+    [Required]
+    [StringLength(1000, MinimumLength = 1)]
+    public required string MiddleName { get; set; }
+
+     [Required]
+    [StringLength(1000, MinimumLength = 1)]
+    public required string LastName { get; set; }
 
     [Required]
     [StringLength(int.MaxValue, MinimumLength = 6)]
@@ -17,11 +25,8 @@ public class UserRegisterModel
     [EmailAddress]
     public required string Email { get; set; }
 
-    public required DateTime Birthday { get; set; }
+    public required DateOnly Birthday { get; set; }
 
     [Phone]
     public required string Phone { get; set; }
-
-    [Required]
-    public required Guid Speciality { get; set; }
 }
