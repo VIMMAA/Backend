@@ -202,9 +202,100 @@ public class UserController : ControllerBase
     return Ok(new { message = "Logout successful" });
 
     }
+        [ProducesResponseType(StatusCodes.Status200OK)]
+[ProducesResponseType(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(StatusCodes.Status500InternalServerError)]
+      [HttpGet("profile")]
+           [Authorize] 
+
+    public async Task<IActionResult> GetProfile()
+    {
+        if (!User.Identity.IsAuthenticated)
+    {
+        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+    }
+    var doctorIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+    
+    if (doctorIdClaim == null)
+    {
+        return BadRequest(new { message = "Invalid token" });
+    }
+
+    var doctorId = Guid.Parse(doctorIdClaim.Value);
+
+    var doctor = await _context.Users.FindAsync(doctorId);
+
+    if (doctor == null)
+    {
+        return NotFound(new { message = "Doctor not found" });
+    }
 
 
+    try {
+        return Ok(new
+        {
+            profile = doctor,
+        });
+    }
+    catch(Exception e)
+     {
+        Console.Error.WriteLine($"Error registering doctor: {e}");
+
+        return StatusCode(500, new  { Status = "error", Message = e.Message }); 
+
+    }
+}
+
+  [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [HttpPut("profile")]
+    [Authorize]
+
+    public async Task<IActionResult> UpdateProfile([FromBody] UserEditModel updatedProfile)
+    {
+        if (!User.Identity.IsAuthenticated)
+        {
+        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+        }
+        var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+    
+        if (userIdClaim == null)
+        {
+            return BadRequest(new { message = "Invalid token" });
+        }
+
+        var doctorId = Guid.Parse(userIdClaim.Value);
+
+
+        var user = await _context.Users.FindAsync(doctorId);
+
+        if (user == null)
+        {
+            return NotFound(new { message = "Doctor not found" });
+        }
+
+        user.Update(updatedProfile.FirstName , updatedProfile.MiddleName , updatedProfile.LastName );
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { status = "success", message = "Profile updated successfully" });
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new  { Status = "error", Message = ex.Message }); 
+            }
+            catch (Exception ex)
+            {
+                
+                return StatusCode(500, new  { Status = "error", Message = ex.Message }); 
+            }
+        }
 }
 
 
 }
+
+

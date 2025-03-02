@@ -14,5 +14,11 @@ public class User : Entity
 
     public required string Password { get; set; }
 
-    
+    public void Update (string firstName, string middleName , string lastName) 
+    {
+       FirstName = firstName;
+       MiddleName = middleName;
+       LastName = lastName;
+
+    }
 }

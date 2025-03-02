@@ -7,16 +7,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавляем контроллеры
 builder.Services.AddControllers();
 
-// Настройка Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => 
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "OKR API", Version = "v1" });
 
-    // Настройка поддержки JWT в Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -38,7 +35,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Регистрация других сервисов
 builder.Services.AddSingleton<ITokenRevocationService, TokenRevocationService>();
 
 builder.Services.AddControllers()
@@ -50,7 +46,6 @@ builder.Services.AddControllers()
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Настройка JWT аутентификации
 var secretKey = "G7@!f4#Zq8&lN9^kP2*eR1$hW3%tX6@zB5";
 var key = Encoding.ASCII.GetBytes(secretKey); 
 
@@ -74,7 +69,6 @@ builder.Services.AddAuthentication(x =>
 
 var app = builder.Build();
 
-// Настройка Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger(); 
@@ -86,7 +80,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication(); // Обязательно добавьте это перед UseAuthorization
+app.UseAuthentication(); 
 app.UseAuthorization();
 app.MapControllers();
 
