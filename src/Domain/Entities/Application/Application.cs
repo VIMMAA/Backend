@@ -1,12 +1,16 @@
-﻿using Domain.Abstractions;
+using Domain.Abstractions;
 using Domain.Enums;
-
+using Microsoft.VisualBasic;
 namespace Domain.Entities.Application;
 
-public class Application : Entity
+public class ApplicationModel : Entity
 {
-    public required DateTime SubmissionDate { get; set; }
-    public required ApplicationResult Result { get; set; }
-    public virtual required ICollection<Lesson> SelectedLessons { get; set; }
-    public virtual required ICollection<AttachedFile> AttachedFiles { get; set; }
+    public required List <Lesson> Lessones {get; set;}
+
+    public required ApplicationResult Status { get; set; }
+
+    public required Guid StudentId { get; set; }
+    public  required DateTime SubmissionDate { get; set; }
+
+    public required List <AttachedFile> AttachedFiles {get; set;}
 }
