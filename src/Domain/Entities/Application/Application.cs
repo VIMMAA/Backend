@@ -8,6 +8,9 @@ public class ApplicationModel : Entity
     public required List <Lesson> Lessones {get; set;}
 
     public required ApplicationResult Status { get; set; }
+    
+    public required string Description { get; set; }
+
 
     public required Guid StudentId { get; set; }
     public  required DateTime SubmissionDate { get; set; }

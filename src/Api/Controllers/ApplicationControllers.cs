@@ -16,7 +16,7 @@ using Domain.Entities.Application;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ApplicationsController : ControllerBase
+public class ApplicationController : ControllerBase
 {
     private readonly ITokenRevocationService _tokenRevocationService;
 
@@ -24,7 +24,7 @@ public class ApplicationsController : ControllerBase
 
     private readonly ApplicationContext _context;
 
-    public ApplicationsController(ApplicationContext context)
+    public ApplicationController(ApplicationContext context)
     {
         _context = context;
 
@@ -37,6 +37,10 @@ public class ApplicationsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> SubmitApplication([FromBody] ApplicationCreateModel applicationDto)
     {
+    if (!User.Identity.IsAuthenticated)
+    {
+        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+    }
 
     var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
@@ -73,6 +77,7 @@ public class ApplicationsController : ControllerBase
         Id = Guid.NewGuid(),
         Status = ApplicationResult.NotDefined,
         SubmissionDate = DateTime.UtcNow,
+        Description = null,
         Lessones = new List<Lesson>()
     };
 
@@ -107,13 +112,100 @@ public class ApplicationsController : ControllerBase
 
     }
 
-_context.Applications.Add(application);
-await _context.SaveChangesAsync();
+    _context.Applications.Add(application);
+    await _context.SaveChangesAsync();
 
-return Ok(new { message = "Application has created" , Application = application });
+    return Ok(new { message = "Application has created" , Application = application });
        
+    }
+
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [HttpGet("{id}")]
+    [Authorize] 
+
+    public async Task<ActionResult<ApplicationModel>> GetApplication(Guid id) 
+    {
+    if (!User.Identity.IsAuthenticated)
+    {
+        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+    }
+
+    var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+    if (_tokenRevocationService.IsTokenRevoked(token))
+    {
+        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+    }
+
+    var application = await _context.Applications.FirstOrDefaultAsync(d => d.Id == id); 
+    if (application == null)
+    {
+        return BadRequest(new { message = "Invalid Id" });
+    }
+    try
+    {
+        return Ok(application);
+    }
+    catch
+    {
+        return StatusCode(500, new  { Status = "error", Message = "JWT key not found" });
+    }
 }
+
+
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]   
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [HttpGet("applicationList/{StudentId}")]
+    [Authorize] 
+    public async Task<ActionResult<List<ApplicationShortModel>>> GetShortApplication(  Guid StudentId ) 
+{
+    if (!ModelState.IsValid)
+    {
+        return BadRequest(new { status = "error", message = "Invalid arguments" });
+    }
+
+    var patient = await _context.Users.FirstOrDefaultAsync(d => d.Id == StudentId);
+    
+    if (patient == null)
+    {
+        return BadRequest(new { message = "Invalid Id" });
+    }
+
+    var applications = await _context.Applications
+        .Where( a => a.StudentId == StudentId)
+        .ToListAsync();
+
+   
+
+    
+    var applicationShortModels = applications.Select(i => new ApplicationShortModel
+    {
+        Id = i.Id,
+        SubmissionDate = i.SubmissionDate,
+        Status = i.Status
+    }).ToList();
+
+    try 
+    {
+        return Ok(applicationShortModels); 
+    }
+    catch (Exception e)
+        {
+            Console.Error.WriteLine($"Error registering doctor: {e}");
+            return StatusCode(500, new  { Status = "error", Message = e.Message }); 
+        }
 }
+
+
+}
+
+
+
 
 
 
