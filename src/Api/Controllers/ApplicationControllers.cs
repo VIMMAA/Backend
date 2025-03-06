@@ -35,40 +35,38 @@ public class ApplicationController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> SubmitApplication([FromBody] ApplicationCreateModel applicationDto)
-    {
+   public async Task<IActionResult> SubmitApplication([FromBody] ApplicationCreateModel applicationDto)
+{
     if (!User.Identity.IsAuthenticated)
     {
-        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+        return Unauthorized(new { status = "error", message = "Неавторизованный доступ" });
     }
 
     var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
     if (_tokenRevocationService.IsTokenRevoked(token))
     {
-        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+        return Unauthorized(new { status = "error", message = "Неавторизованный доступ" });
     }
 
     if (applicationDto.Files == null || applicationDto.Files.Count == 0)
     {
-        return BadRequest("You need to attach 1 file or more");
+        return BadRequest("Необходимо прикрепить 1 файл или более");
     }
 
     if (applicationDto.Lessons == null || applicationDto.Lessons.Count == 0)
     {
-        return BadRequest("Add lessones, pls");
+        return BadRequest("Добавьте уроки, пожалуйста");
     }
 
     var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
 
     if (userIdClaim == null)
     {
-        return BadRequest(new { message = "Invalid token" });
+        return BadRequest(new { message = "Недействительный токен" });
     }
 
     var userId = Guid.Parse(userIdClaim.Value);
-
-
 
     var application = new ApplicationModel
     {
@@ -83,6 +81,11 @@ public class ApplicationController : ControllerBase
 
     foreach (var file in applicationDto.Files)
     {
+        if (string.IsNullOrEmpty(file.Data) || !file.Data.StartsWith("data:"))
+        {
+            return BadRequest("unvalid files");
+        }
+
         var fileName = Path.GetFileName(file.Name);
         var filePath = Path.Combine(_storagePath, fileName);
 
@@ -103,21 +106,17 @@ public class ApplicationController : ControllerBase
 
     foreach (var lesson in _context.Lessones) 
     {
-        bool isInclude = applicationDto.Lessons.Any(a => a == lesson.Id.ToString());
-
-        if (isInclude) 
+        if (applicationDto.Lessons.Contains(lesson.Id.ToString())) 
         {
             application.Lessones.Add(lesson);
         }
-
     }
 
-    _context.Applications.Add(application);
-    await _context.SaveChangesAsync();
+    await _context.Applications.AddAsync(application);
+     await _context.SaveChangesAsync();
 
-    return Ok(new { message = "Application has created" , Application = application });
-       
-    }
+    return Ok(new { status = "success", message = "application has created", application = application  });
+}
 
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -140,7 +139,11 @@ public class ApplicationController : ControllerBase
         return Unauthorized(new { status = "error", message = "Unauthorized access" });
     }
 
-    var application = await _context.Applications.FirstOrDefaultAsync(d => d.Id == id); 
+    var application = await _context.Applications
+        .Include(a => a.AttachedFiles) 
+        .Include(a => a.Lessones) 
+        .FirstOrDefaultAsync(a => a.Id == id);    
+    
     if (application == null)
     {
         return BadRequest(new { message = "Invalid Id" });
@@ -163,7 +166,7 @@ public class ApplicationController : ControllerBase
     [HttpGet("applicationList/{StudentId}")]
     [Authorize] 
     public async Task<ActionResult<List<ApplicationShortModel>>> GetShortApplication(  Guid StudentId ) 
-{
+    {
     if (!ModelState.IsValid)
     {
         return BadRequest(new { status = "error", message = "Invalid arguments" });
@@ -195,12 +198,61 @@ public class ApplicationController : ControllerBase
         return Ok(applicationShortModels); 
     }
     catch (Exception e)
-        {
-            Console.Error.WriteLine($"Error registering doctor: {e}");
-            return StatusCode(500, new  { Status = "error", Message = e.Message }); 
-        }
+    {
+        Console.Error.WriteLine($"Error registering doctor: {e}");
+        return StatusCode(500, new  { Status = "error", Message = e.Message }); 
+    }
 }
 
+[HttpPut("{id}")]
+public async Task<IActionResult> UpdateApplication(Guid id, [FromBody] ApplicationEditModel applicationEditModel)
+{
+    var application = await _context.Applications
+        .Include(a => a.AttachedFiles)
+        .Include(a => a.Lessones)
+        .FirstOrDefaultAsync(a => a.Id == id);
+
+    if (application == null)
+    {
+        return NotFound(new { status = "error", message = "Заявка не найдена" });
+    }
+
+    application.Lessones.Clear(); 
+    foreach (var lessonId in applicationEditModel.Lessons)
+    {
+        var lesson = await _context.Lessones.FindAsync(Guid.Parse(lessonId));
+        if (lesson != null)
+        {
+            application.Lessones.Add(lesson);
+        }
+    }
+
+    application.AttachedFiles.Clear(); 
+    foreach (var file in applicationEditModel.Files)
+    {
+        
+        var fileName = Path.GetFileName(file.Name);
+        var filePath = Path.Combine(_storagePath, fileName);
+
+        var base64Data = file.Data.Split(',')[1];
+        var fileBytes = Convert.FromBase64String(base64Data);
+
+        await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
+
+        var attachedFile = new AttachedFile
+        {
+            Id = Guid.NewGuid(), 
+            Name = file.Name,
+            FilePath = filePath 
+        };
+
+        application.AttachedFiles.Add(attachedFile);
+    }
+
+    await _context.SaveChangesAsync();
+
+    return Ok(new { status = "success", message = "Application has updated" });
+}
 
 }
 
