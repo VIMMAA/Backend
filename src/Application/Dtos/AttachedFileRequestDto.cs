@@ -1,9 +1,7 @@
-﻿using Domain.Abstractions;
+﻿namespace Application.Dtos;
 
-namespace Domain.Entities;
-
-public class AttachedFile : Entity
+public class AttachedFileRequestDto
 {
     public required string Name { get; set; }
     public required string Data { get; set; }
- }
+}
