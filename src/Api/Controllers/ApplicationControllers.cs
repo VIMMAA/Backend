@@ -251,7 +251,7 @@ public async Task<IActionResult> UpdateApplication(Guid id, [FromBody] Applicati
 
     await _context.SaveChangesAsync();
 
-    return Ok(new { status = "success", message = "Application has updated" });
+    return Ok(new { status = "success", message = "Application has been updated" });
 }
 
 }
