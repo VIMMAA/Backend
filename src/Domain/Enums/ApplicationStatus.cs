@@ -1,6 +1,6 @@
 ﻿namespace Domain.Enums;
 
-public enum ApplicationResult
+public enum ApplicationStatus
 {
     NotDefined,
     Approved,
