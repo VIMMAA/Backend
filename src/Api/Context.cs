@@ -6,7 +6,7 @@ namespace Api.Context;
 public class ApplicationContext : DbContext
 {
     public DbSet <User> Users { get; set; }
-     public DbSet <ApplicationModel> Applications { get; set; }
+     public DbSet<StudentApplication> Applications { get; set; }
 
     public DbSet<AttachedFile> Files {get;set;}
 

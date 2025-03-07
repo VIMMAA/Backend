@@ -1,7 +1,7 @@
 ﻿namespace Domain.Repositories;
 
-using Domain.Entities.Application;
-public interface IApplicationRepository : IRepository<ApplicationModel>
+using Domain.Entities;
+public interface IApplicationRepository : IRepository<StudentApplication>
 {
 
 }
