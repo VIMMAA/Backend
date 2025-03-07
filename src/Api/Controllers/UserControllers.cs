@@ -104,7 +104,7 @@ public class UserController : ControllerBase
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
-            return Ok(new { Token = tokenString }); 
+            return Ok(new { Token = tokenString , Role = "student" }); 
         }
         catch (Exception e)
         {
@@ -120,7 +120,7 @@ public class UserController : ControllerBase
   [HttpPost("login")]
     [AllowAnonymous]
 
-    public async Task<IActionResult> LoginDoctor([FromBody] LoginModel doctorLogin)
+    public async Task<IActionResult> LoginUser([FromBody] LoginModel UserLogin)
     {
         if (!ModelState.IsValid) 
         {
@@ -128,7 +128,7 @@ public class UserController : ControllerBase
         }
 
 
-        var user = await _context.Users.FirstOrDefaultAsync(d => d.Email == doctorLogin.Email);
+        var user = await _context.Users.FirstOrDefaultAsync(d => d.Email == UserLogin.Email);
         
 
         if (user == null  )
@@ -172,7 +172,7 @@ public class UserController : ControllerBase
     }
     catch(Exception e)
      {
-        Console.Error.WriteLine($"Error loggin doctor: {e}");
+        Console.Error.WriteLine($"Error loggin user: {e}");
 
         return StatusCode(500); 
     }
@@ -184,7 +184,7 @@ public class UserController : ControllerBase
 [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpPost("logout")]
     [Authorize]
-    public IActionResult LogoutDoctor()
+    public IActionResult LogoutUser()
     {
     
     var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
@@ -202,6 +202,7 @@ public class UserController : ControllerBase
     return Ok(new { message = "Logout successful" });
 
     }
+
         [ProducesResponseType(StatusCodes.Status200OK)]
 [ProducesResponseType(StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -211,36 +212,38 @@ public class UserController : ControllerBase
 
     public async Task<IActionResult> GetProfile()
     {
-        if (!User.Identity.IsAuthenticated)
+    var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+    if (_tokenRevocationService.IsTokenRevoked(token))
     {
         return Unauthorized(new { status = "error", message = "Unauthorized access" });
     }
-    var doctorIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+    var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
     
-    if (doctorIdClaim == null)
+    if (userIdClaim == null)
     {
         return BadRequest(new { message = "Invalid token" });
     }
 
-    var doctorId = Guid.Parse(doctorIdClaim.Value);
+    var userId = Guid.Parse(userIdClaim.Value);
 
-    var doctor = await _context.Users.FindAsync(doctorId);
+    var user = await _context.Users.FindAsync(userId);
 
-    if (doctor == null)
+    if (user == null)
     {
-        return NotFound(new { message = "Doctor not found" });
+        return NotFound(new { message = "user not found" });
     }
 
 
     try {
         return Ok(new
         {
-            profile = doctor,
+            profile = user,
         });
     }
     catch(Exception e)
      {
-        Console.Error.WriteLine($"Error registering doctor: {e}");
+        Console.Error.WriteLine($"Error registering user: {e}");
 
         return StatusCode(500, new  { Status = "error", Message = e.Message }); 
 
@@ -256,9 +259,12 @@ public class UserController : ControllerBase
 
     public async Task<IActionResult> UpdateProfile([FromBody] UserEditModel updatedProfile)
     {
-        if (!User.Identity.IsAuthenticated)
+
+        var token = HttpContext.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+        if (_tokenRevocationService.IsTokenRevoked(token))
         {
-        return Unauthorized(new { status = "error", message = "Unauthorized access" });
+            return Unauthorized(new { status = "error", message = "Unauthorized access" });
         }
         var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
     
@@ -267,14 +273,14 @@ public class UserController : ControllerBase
             return BadRequest(new { message = "Invalid token" });
         }
 
-        var doctorId = Guid.Parse(userIdClaim.Value);
+        var userId = Guid.Parse(userIdClaim.Value);
 
 
-        var user = await _context.Users.FindAsync(doctorId);
+        var user = await _context.Users.FindAsync(userId);
 
         if (user == null)
         {
-            return NotFound(new { message = "Doctor not found" });
+            return NotFound(new { message = "User not found" });
         }
 
         user.Update(updatedProfile.FirstName , updatedProfile.MiddleName , updatedProfile.LastName );
