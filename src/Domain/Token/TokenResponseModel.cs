@@ -1,10 +1,14 @@
 using System.ComponentModel.DataAnnotations;
-
+using Domain.Enums;
 public class TokenResponseModel {
 
     [Required]
     [StringLength(int.MaxValue, MinimumLength = 1)]
     public string Token {get; set;}
+
+    public Role Role {get; set;}
+
+
 
 }
 

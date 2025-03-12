@@ -104,7 +104,7 @@ public class UserController : ControllerBase
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var tokenString = tokenHandler.WriteToken(token);
 
-            return Ok(new { Token = tokenString , Role = "student" }); 
+            return Ok(new TokenResponseModel { Token = tokenString , Role = Role.Student }); 
         }
         catch (Exception e)
         {
@@ -162,14 +162,9 @@ public class UserController : ControllerBase
         var TokenString = tokenHandler.WriteToken(Token);
     try 
     {
-        return Ok(new
-        {
-            status = "success",
-            message = "User logged in successfully",
-            role = user.Role,
-            Token = TokenString,
-        });
+        return Ok(new TokenResponseModel { Token = TokenString , Role = user.Role }); 
     }
+
     catch(Exception e)
      {
         Console.Error.WriteLine($"Error loggin user: {e}");
