@@ -30,10 +30,8 @@ public class UserController : ControllerBase
     public UserController(ApplicationContext context, ITokenRevocationService tokenRevocationService)
     {
         _context = context;
-      //  _configuration = configuration;
         _tokenRevocationService = tokenRevocationService;
     }
-
 
     /// <summary>
     /// Register new user
@@ -111,9 +109,89 @@ public class UserController : ControllerBase
             Console.Error.WriteLine($"Error registering user: {e}");
             return StatusCode(500, new  { Status = "error", Message = e.Message }); 
         }
-    }   
+    }
 
-       [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [HttpPost("register/{linkId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RegisterTeacher(Guid linkId, [FromBody] UserRegisterModel userRegisterModel)
+        {
+
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { status = "error", message = "Invalid arguments" });
+            }
+
+            if (!(await _context.InvitationLinks.AnyAsync(link => link.Id == linkId)))
+            {
+                return BadRequest(new { status = "error", message = "Invalid invitation link" });
+            }
+
+            User user = new()
+            {
+                Role = Role.Teacher,
+                Id = Guid.NewGuid(),
+                FirstName = userRegisterModel.FirstName,
+                MiddleName = userRegisterModel.MiddleName,
+                LastName = userRegisterModel.LastName,
+                Birthday = userRegisterModel.Birthday,
+                Email = userRegisterModel.Email,
+                Password = userRegisterModel.Password,
+            };
+
+
+            bool isEmailExist = _context.Users.Any(d => d.Email == user.Email);
+
+            if (isEmailExist)
+            {
+                return BadRequest(new { status = "error", message = "Email is already exists" });
+            }
+
+            try
+            {
+                await _context.Users.AddAsync(user);
+
+                int r = await _context.SaveChangesAsync();
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtKey = "G7@!f4#Zq8&lN9^kP2*eR1$hW3%tX6@zB5";
+
+                if (string.IsNullOrEmpty(jwtKey))
+                {
+                    throw new InvalidOperationException("JWT_KEY не установлен в переменных окружения.");
+                }
+
+                var key = Encoding.ASCII.GetBytes(jwtKey);
+
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = new ClaimsIdentity(new Claim[]
+                    {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.NameIdentifier, user.Email),
+
+                    }),
+                    Expires = DateTime.UtcNow.AddHours(1),
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                };
+
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(token);
+
+                return Ok(new { Token = tokenString, Role = "teacher" });
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"Error registering user: {e}");
+                return StatusCode(500, new { Status = "error", Message = e.Message });
+            }
+        }
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
 [ProducesResponseType(StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType(StatusCodes.Status500InternalServerError)]

@@ -44,7 +44,9 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDbContext<ApplicationContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options
+        .UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .EnableSensitiveDataLogging());
 
 var secretKey = "G7@!f4#Zq8&lN9^kP2*eR1$hW3%tX6@zB5";
 var key = Encoding.ASCII.GetBytes(secretKey); 
@@ -79,9 +81,20 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
 app.UseAuthentication(); 
 app.UseAuthorization();
 app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+    if (args.Length != 0 && args[0] == "delete")
+    {
+        await dbContext.Database.EnsureDeletedAsync();
+    }
+
+    await dbContext.Database.EnsureCreatedAsync();
+}
 
 await app.RunAsync();
