@@ -5,16 +5,14 @@ using Domain.Entities.Application;
 namespace Api.Context;
 public class ApplicationContext : DbContext
 {
-    public DbSet <User> Users { get; set; }
-     public DbSet<StudentApplication> Applications { get; set; }
-
+    public DbSet<User> Users { get; set; }
+     public DbSet<ApplicationModel> Applications { get; set; }
     public DbSet<AttachedFile> Files {get;set;}
+     public DbSet<Lesson> Lessons { get; set; }
+    public DbSet<InvitationLink> InvitationLinks { get; set; }
 
 
-     public DbSet<Lesson> Lessones {get; set;}
-
-
- public bool TestConnection()
+    public bool TestConnection()
     {
         try
         {
