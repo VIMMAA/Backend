@@ -1,5 +1,6 @@
 ﻿using Api.Context;
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -15,7 +16,7 @@ public class InvitationLinkController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GenerateInvitationLinkAsync()
+    public async Task<IActionResult> GenerateInvitationLinkAsync([FromQuery] Role role)
     {
         if (!User.Identity.IsAuthenticated)
         {
@@ -25,6 +26,7 @@ public class InvitationLinkController : ControllerBase
         var link = new InvitationLink
         {
             Id = Guid.NewGuid(),
+            Role = role,
         };
         _context.InvitationLinks.Add(link);
         await _context.SaveChangesAsync();
