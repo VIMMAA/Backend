@@ -315,6 +315,7 @@ public class UserController : ControllerBase
         return Ok(new
         {
             profile = user,
+            Message = "SWAGA"
         });
     }
     catch(Exception e)
