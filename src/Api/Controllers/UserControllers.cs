@@ -185,7 +185,7 @@ public class UserController : ControllerBase
                 var token = tokenHandler.CreateToken(tokenDescriptor);
                 var tokenString = tokenHandler.WriteToken(token);
 
-                return Ok(new { Token = tokenString, Role = "teacher" });
+                return Ok(new { Token = tokenString, Role = link.Role });
             }
             catch (Exception e)
             {

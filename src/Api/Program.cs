@@ -19,6 +19,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => 
 {
@@ -90,6 +92,8 @@ if (true)
         c.RoutePrefix = string.Empty; 
     });
 }
+
+app.UseCors("AllowLocalhost");
 
 app.UseAuthentication(); 
 app.UseAuthorization();
