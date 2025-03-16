@@ -126,14 +126,17 @@ public class UserController : ControllerBase
                 return BadRequest(new { status = "error", message = "Invalid arguments" });
             }
 
-            if (!(await _context.InvitationLinks.AnyAsync(link => link.Id == linkId)))
+            if (!await _context.InvitationLinks.AnyAsync(link => link.Id == linkId))
             {
                 return BadRequest(new { status = "error", message = "Invalid invitation link" });
             }
 
+            var link = await _context.InvitationLinks.FirstOrDefaultAsync(link => link.Id == linkId);
+
+            
             User user = new()
             {
-                Role = Role.Teacher,
+                Role = link.Role,
                 Id = Guid.NewGuid(),
                 FirstName = userRegisterModel.FirstName,
                 MiddleName = userRegisterModel.MiddleName,
