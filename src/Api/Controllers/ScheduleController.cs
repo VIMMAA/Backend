@@ -62,8 +62,8 @@ public class ScheduleController : ControllerBase
         await _context.SaveChangesAsync();
     }
 
-    [HttpPost]
-    public async Task<IActionResult> GetScheduleAsync([FromBody] GetScheduleModel model)
+    [HttpGet]
+    public async Task<IActionResult> GetScheduleAsync(GetScheduleModel model)
     {
         if (!_isScheduleCreated)
         {
