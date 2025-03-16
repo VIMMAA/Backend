@@ -18,7 +18,7 @@ public class ScheduleController : ControllerBase
         _context = context;
     }
 
-    private async Task CreateScheduleAsync()
+    private async Task CreateScheduleAsync() // TODO: Парсинг с расписания
     {
         var lessonNames = new List<string>
         {
