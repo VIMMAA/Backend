@@ -321,7 +321,7 @@ public class UserController : ControllerBase
      {
         Console.Error.WriteLine($"Error registering user: {e}");
 
-        return StatusCode(500, new  { Status = "error", Message = e.Message }); 
+        return StatusCode(500, new  { Status = "error", Message = "SWAGA" }); 
 
     }
 }
