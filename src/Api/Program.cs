@@ -93,7 +93,7 @@ if (true)
     });
 }
 
-app.UseCors("AllowLocalhost");
+app.UseCors("AllowAll");
 
 app.UseAuthentication(); 
 app.UseAuthorization();
