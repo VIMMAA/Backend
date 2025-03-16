@@ -71,7 +71,7 @@ builder.Services.AddAuthentication(x =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (true)
 {
     app.UseSwagger(); 
     app.UseSwaggerUI(c => 
