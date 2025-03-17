@@ -217,6 +217,11 @@ public class UserController : ControllerBase
             return Unauthorized(new { status = "error", message = "Invalid email or password" });
         }
 
+        if (user.Password != UserLogin.Password) 
+        {
+            return BadRequest(new { status = "error", message = "Invalid email or password" });
+        }
+
         var jwtKey = "G7@!f4#Zq8&lN9^kP2*eR1$hW3%tX6@zB5"; 
 
         if (string.IsNullOrEmpty(jwtKey))
