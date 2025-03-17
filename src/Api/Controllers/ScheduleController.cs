@@ -11,8 +11,6 @@ public class ScheduleController : ControllerBase
 {
     private readonly ApplicationContext _context;
 
-    private bool _isScheduleCreated = false;
-
     public ScheduleController(ApplicationContext context)
     {
         _context = context;
@@ -65,10 +63,9 @@ public class ScheduleController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetScheduleAsync(GetScheduleModel model)
     {
-        if (!_isScheduleCreated)
+        if (!await _context.Lessons.AnyAsync())
         {
             await CreateScheduleAsync();
-            _isScheduleCreated = true;
         }
 
         var schedule = await _context.Lessons
