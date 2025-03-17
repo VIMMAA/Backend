@@ -32,6 +32,17 @@ public class ScheduleController : ControllerBase
             "Тестирование программного обеспечения"
         };
 
+        var lessonStartAndEnd = new List<(TimeOnly, TimeOnly)>
+        {
+            (new TimeOnly(8, 45), new TimeOnly(10, 20)),
+            (new TimeOnly(10, 35), new TimeOnly(12, 10)),
+            (new TimeOnly(12, 25), new TimeOnly(14, 0)),
+            (new TimeOnly(14, 45), new TimeOnly(16, 20)),
+            (new TimeOnly(16, 35), new TimeOnly(18, 10)),
+            (new TimeOnly(18, 25), new TimeOnly(20, 0)),
+            (new TimeOnly(20, 15), new TimeOnly(21, 50))
+        };
+
         var startDate = new DateTime(DateTime.Now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var endDate = startDate.AddYears(1);
         var random = new Random();
@@ -42,15 +53,15 @@ public class ScheduleController : ControllerBase
 
             for (var i = 0; i < lessonCount; i++)
             {
-                var lessonStart = date.Date.AddHours(8.75).AddHours(1.5 * i);
-                var lessonEnd = lessonStart.AddHours(1.5);
+                var lessonStart = lessonStartAndEnd[i].Item1;
+                var lessonEnd = lessonStartAndEnd[i].Item2;
 
                 var lesson = new Lesson
                 {
                     Id = Guid.NewGuid(),
                     Name = lessonNames[random.Next(lessonNames.Count)],
-                    StartTime = lessonStart,
-                    EndTime = lessonEnd
+                    StartTime = date.Add(lessonStart.ToTimeSpan()),
+                    EndTime = date.Add(lessonEnd.ToTimeSpan())
                 };
 
                 _context.Lessons.Add(lesson);
