@@ -95,7 +95,7 @@ public class UserController : ControllerBase
                     new Claim(ClaimTypes.NameIdentifier, user.Email),
 
                 }),
-                Expires = DateTime.UtcNow.AddHours(1), 
+                Expires = DateTime.MaxValue,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -178,7 +178,7 @@ public class UserController : ControllerBase
                     new Claim(ClaimTypes.NameIdentifier, user.Email),
 
                     }),
-                    Expires = DateTime.UtcNow.AddHours(1),
+                    Expires = DateTime.MaxValue,
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
                 };
 
@@ -240,7 +240,7 @@ public class UserController : ControllerBase
                 new Claim(ClaimTypes.NameIdentifier, user.Email),
 
             }),
-            Expires = DateTime.UtcNow.AddMinutes(30), 
+            Expires = DateTime.MaxValue, 
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 

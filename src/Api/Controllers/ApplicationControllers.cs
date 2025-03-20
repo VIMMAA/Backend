@@ -239,11 +239,17 @@ public class ApplicationController : ControllerBase
     {
         var application = await _context.Applications
             .FirstOrDefaultAsync(a => a.Id == id);
+
         if (application == null)
         {
             return NotFound(new { status = "error", message = "Заявка не найдена" });
         }
+
+        var files = _context.Files.Where(f => f.Id == id);
+
+        _context.Files.RemoveRange(files);
         _context.Applications.Remove(application);
+
         await _context.SaveChangesAsync();
         return Ok(new { status = "success", message = "Заявка удалена" });
     }
