@@ -197,6 +197,11 @@ public class ApplicationController : ControllerBase
                 application.Lessons.Add(lesson);
             }
         }
+        application.SubmissionDate = DateTime.UtcNow;
+
+        var sortedApplications = await _context.Applications
+            .OrderBy(a => a.SubmissionDate) 
+            .ToListAsync();
 
         await _context.SaveChangesAsync();
 
