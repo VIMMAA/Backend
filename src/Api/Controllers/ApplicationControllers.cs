@@ -188,6 +188,12 @@ public class ApplicationController : ControllerBase
             return NotFound(new { status = "error", message = "Заявка не найдена" });
         }
 
+        if (application.Status == ApplicationStatus.NotDefined) {
+            
+            return BadRequest(new { status = "error", message = "Заявка на проверке " });
+
+        }
+
         application.Lessons.Clear();
         foreach (var lessonId in applicationEditModel.Lessons)
         {
@@ -197,6 +203,11 @@ public class ApplicationController : ControllerBase
                 application.Lessons.Add(lesson);
             }
         }
+        application.SubmissionDate = DateTime.UtcNow;
+
+        var sortedApplications = await _context.Applications
+            .OrderBy(a => a.SubmissionDate) 
+            .ToListAsync();
 
         await _context.SaveChangesAsync();
 
