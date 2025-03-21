@@ -188,9 +188,9 @@ public class ApplicationController : ControllerBase
             return NotFound(new { status = "error", message = "Заявка не найдена" });
         }
 
-        if (application.Status == ApplicationStatus.NotDefined) {
+        if (application.Status != ApplicationStatus.NotDefined) {
             
-            return BadRequest(new { status = "error", message = "Заявка на проверке " });
+            return BadRequest(new { status = "error", message = "Нельзя редактировать заявку, которая не на проверке" });
 
         }
 
