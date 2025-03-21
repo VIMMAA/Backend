@@ -191,6 +191,36 @@ public class ApplicationController : ControllerBase
         }, id, application!.SubmissionDate);
 
         return Ok(new { status = "success", message = "Application has updated" });
+
+        //var application = await _context.Applications
+        //    .Include(a => a.AttachedFiles)
+        //    .Include(a => a.Lessons)
+        //    .FirstOrDefaultAsync(a => a.Id == id);
+
+        //if (application == null)
+        //{
+        //    return NotFound(new { status = "error", message = "Заявка не найдена" });
+        //}
+
+        //application.Lessons.Clear();
+        //foreach (var lessonId in applicationEditModel.Lessons)
+        //{
+        //    var lesson = await _context.Lessons.FindAsync(Guid.Parse(lessonId));
+        //    if (lesson != null)
+        //    {
+        //        application.Lessons.Add(lesson);
+        //    }
+        //}
+
+        //application.SubmissionDate = DateTime.UtcNow;
+        //application.Status = ApplicationStatus.NotDefined;
+        //var sortedApplications = await _context.Applications
+        //    .OrderBy(a => a.SubmissionDate) 
+        //    .ToListAsync();
+
+        //await _context.SaveChangesAsync();
+
+        //return Ok(new { status = "success", message = "Application has updated" });
     }
 
     [HttpPost("approve/{id}")]
