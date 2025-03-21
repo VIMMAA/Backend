@@ -256,11 +256,11 @@ public class ApplicationController : ControllerBase
             return NotFound(new { status = "error", message = "Заявка не найдена" });
         }
 
-        var files = _context.Files.Where(f => f.Id == id);
+        var files = _context.Files
+            .Where(f => EF.Property<Guid>(f, "ApplicationModelId") == id);
 
         _context.Files.RemoveRange(files);
         _context.Applications.Remove(application);
-
         await _context.SaveChangesAsync();
         return Ok(new { status = "success", message = "Заявка удалена" });
     }
