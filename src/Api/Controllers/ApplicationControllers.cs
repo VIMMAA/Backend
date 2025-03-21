@@ -204,7 +204,7 @@ public class ApplicationController : ControllerBase
             }
         }
         application.SubmissionDate = DateTime.UtcNow;
-
+        application.Status = ApplicationStatus.NotDefined;
         var sortedApplications = await _context.Applications
             .OrderBy(a => a.SubmissionDate) 
             .ToListAsync();
@@ -213,6 +213,7 @@ public class ApplicationController : ControllerBase
 
         return Ok(new { status = "success", message = "Application has updated" });
     }
+
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> ApproveApplicationAsync(Guid id)
     {
@@ -246,24 +247,28 @@ public class ApplicationController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    
     public async Task<IActionResult> DeleteApplicationAsync(Guid id)
+{
+    try
     {
-        var application = await _context.Applications
-            .FirstOrDefaultAsync(a => a.Id == id);
-
+        var application = await _context.Applications.FindAsync(id);
         if (application == null)
         {
             return NotFound(new { status = "error", message = "Заявка не найдена" });
         }
 
-        var files = _context.Files.Where(f => f.Id == id);
-
-        _context.Files.RemoveRange(files);
         _context.Applications.Remove(application);
-
         await _context.SaveChangesAsync();
+
         return Ok(new { status = "success", message = "Заявка удалена" });
     }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { status = "error", message = "Ошибка сервера" });
+    }
+}
+
 
     [HttpGet("applicationList")]
     public async Task<IActionResult> GetAllApplicationsAsync()
