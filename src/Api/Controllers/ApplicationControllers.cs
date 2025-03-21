@@ -28,8 +28,9 @@ public class ApplicationController : ControllerBase
         _tokenRevocationService = tokenRevocationService;
     }
 
+    [DisableRequestSizeLimit]
     [HttpPost]
-    public async Task<IActionResult> SubmitApplication([FromBody] ApplicationCreateModel applicationDto)
+    public async Task<IActionResult> SubmitApplication([FromBody] ApplicationCreateModel applicationDto, Guid? id = null, DateTime? submissionDate = null)
     {
         if (!User.Identity.IsAuthenticated)
         {
@@ -71,9 +72,9 @@ public class ApplicationController : ControllerBase
                 Data = m.Data
             }),
             StudentId = userId,
-            Id = Guid.NewGuid(),
+            Id = id ?? Guid.NewGuid(),
             Status = ApplicationStatus.NotDefined,
-            SubmissionDate = DateTime.UtcNow,
+            SubmissionDate = submissionDate ?? DateTime.UtcNow,
             Comment = null,
             Lessons = []
         };
@@ -95,7 +96,7 @@ public class ApplicationController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpGet("{id}")]
     [Authorize]
-
+    [DisableRequestSizeLimit]
     public async Task<ActionResult<ApplicationModel>> GetApplication(Guid id)
     {
         if (!User.Identity.IsAuthenticated)
@@ -136,6 +137,7 @@ public class ApplicationController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [HttpGet("applicationList/{StudentId}")]
     [Authorize]
+    [DisableRequestSizeLimit]
     public async Task<ActionResult<List<ApplicationShortModel>>> GetShortApplication(Guid StudentId)
     {
         if (!ModelState.IsValid)
@@ -176,45 +178,23 @@ public class ApplicationController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> UpdateApplication(Guid id, [FromBody] ApplicationEditModel applicationEditModel)
     {
-        var application = await _context.Applications
-            .Include(a => a.AttachedFiles)
-            .Include(a => a.Lessons)
-            .FirstOrDefaultAsync(a => a.Id == id);
+        var application = await _context.Applications.FindAsync(id);
 
-        if (application == null)
+        await DeleteApplicationAsync(id);
+        await SubmitApplication(new ApplicationCreateModel()
         {
-            return NotFound(new { status = "error", message = "Заявка не найдена" });
-        }
-
-        if (application.Status == ApplicationStatus.NotDefined) {
-            
-            return BadRequest(new { status = "error", message = "Заявка на проверке " });
-
-        }
-
-        application.Lessons.Clear();
-        foreach (var lessonId in applicationEditModel.Lessons)
-        {
-            var lesson = await _context.Lessons.FindAsync(Guid.Parse(lessonId));
-            if (lesson != null)
-            {
-                application.Lessons.Add(lesson);
-            }
-        }
-        application.SubmissionDate = DateTime.UtcNow;
-        application.Status = ApplicationStatus.NotDefined;
-        var sortedApplications = await _context.Applications
-            .OrderBy(a => a.SubmissionDate) 
-            .ToListAsync();
-
-        await _context.SaveChangesAsync();
+            Lessons = applicationEditModel.Lessons,
+            Files = applicationEditModel.Files,
+        }, id, application!.SubmissionDate);
 
         return Ok(new { status = "success", message = "Application has updated" });
     }
 
     [HttpPost("approve/{id}")]
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> ApproveApplicationAsync(Guid id)
     {
         var application = await _context.Applications
@@ -229,7 +209,7 @@ public class ApplicationController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { status = "success", message = "Заявка одобрена" });
     }
-
+    [DisableRequestSizeLimit]
     [HttpPost("decline/{id}")]
     public async Task<IActionResult> DeclineApplicationAsync(Guid id)
     {
@@ -247,7 +227,7 @@ public class ApplicationController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    
+    [DisableRequestSizeLimit]
     public async Task<IActionResult> DeleteApplicationAsync(Guid id)
 {
     try
@@ -261,6 +241,14 @@ public class ApplicationController : ControllerBase
         var files = _context.Files
             .Where(f => EF.Property<Guid>(f, "ApplicationModelId") == id);
 
+        var lessons = _context.Lessons
+            .Where(l => EF.Property<Guid?>(l, "ApplicationModelId") == id);
+
+        foreach (var lesson in lessons)
+        {
+            _context.Entry(lesson).Property("ApplicationModelId").CurrentValue = null;
+        }
+
         _context.Files.RemoveRange(files);
         _context.Applications.Remove(application);
         await _context.SaveChangesAsync();
@@ -272,7 +260,7 @@ public class ApplicationController : ControllerBase
     }
 }
 
-
+    [DisableRequestSizeLimit]
     [HttpGet("applicationList")]
     public async Task<IActionResult> GetAllApplicationsAsync()
     {
